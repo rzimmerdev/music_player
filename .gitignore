@@ -1,0 +1,5 @@
+.idea
+songs/*.mp3
+youtube_download.spec
+build
+dist
