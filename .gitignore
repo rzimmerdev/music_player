@@ -1,5 +1,5 @@
 .idea
-songs/*.mp3
+*.mp3
 youtube_download.spec
 build
 dist
