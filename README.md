@@ -1,2 +1,3 @@
 # song-manager
-Tired of manually managing your songs, lyrics and albums? Yeah, me too
+Tired of manually managing your songs, lyrics and albums? Don't want to pay for Spotify, Youtube Music or whatever? Deezer to ugly? 
+Yeah...
