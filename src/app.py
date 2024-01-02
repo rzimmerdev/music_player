@@ -1,9 +1,9 @@
+import os
+
 import curses
 import signal
 
-from player import AudioStream
-
-import os
+from .player import AudioStream
 
 
 def extract_name(file_path):
@@ -129,12 +129,3 @@ class App:
             if self.audio_stream:
                 self.audio_stream.stop()
             print("Exiting...")
-
-
-def main(stdscr):
-    app = App(stdscr, "music")
-    app.run()
-
-
-if __name__ == "__main__":
-    curses.wrapper(main)
