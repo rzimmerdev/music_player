@@ -1,12 +1,12 @@
 import curses
 
-from src.player import Song
-from src.views import Window, SongMenu
+from src.views import Window
+from src.views.menus.content import ContentMenu
 
 
 def main(stdscr):
-    starting_menu = SongMenu(Song("test", "test"))
-    window = Window(stdscr, starting_menu)
+    content_menu = ContentMenu()
+    window = Window(stdscr, content_menu)
 
     try:
         while True:

@@ -51,7 +51,7 @@ class VolumeBar(Screen):
         TWO = "🔉"
         THREE = "🔊"
 
-    def __init__(self, max_volume=3):
+    def __init__(self, max_volume=100):
         self._volume = 0
         self.max_volume = max_volume
 
@@ -70,8 +70,18 @@ class VolumeBar(Screen):
         elif self.volume < 0:
             self.volume = 0
 
+    def get_icon(self):
+        if self.volume == 0:
+            return self.Volume.ZERO.value
+        elif self.volume <= 33:
+            return self.Volume.ONE.value
+        elif self.volume <= 66:
+            return self.Volume.TWO.value
+        else:
+            return self.Volume.THREE.value
+
     def draw(self, stdscr):
-        stdscr.addstr(1, 0, f"Volume: {self.Volume(self.volume).value}")
+        stdscr.addstr(1, 0, f"Volume: {self.get_icon()}")
 
 
 class ProgressBar(Screen):

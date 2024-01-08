@@ -5,14 +5,14 @@ from src.views.screens.screen import Screen
 
 
 class Menu(Screen):
-    def __init__(self, title, options, selected_option):
+    def __init__(self, title=None, options=None, selected_option=None):
         self.title = title
-        self.options = options
-        self.selected_option = selected_option
+        self.options = options or []
+        self.selected_option = selected_option or 0
         self.draw_content: None or Callable = None
 
     def draw(self, stdscr: curses.window):
-        stdscr.addstr(0, 0, self.title)
+        stdscr.addstr(0, 0, self.title + "\n")
 
         if self.draw_content is not None:
             self.draw_content(stdscr)
