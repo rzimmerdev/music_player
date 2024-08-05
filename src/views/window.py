@@ -1,33 +1,26 @@
-import curses
-
-from .menus import Menu
+from .screen import Screen
+from ..player import Player
 
 
 class Window:
-    def __init__(self, stdscr, starting_menu: Menu):
+    def __init__(self, stdscr, starting_screen: Screen = None):
         self.stdscr = stdscr
         self.stdscr.nodelay(1)
 
         self.previous_menus = []
-        self.current_menu = starting_menu
+        self.screen = starting_screen
+        self.size = self.stdscr.getmaxyx()
+        self.player = Player()
 
     def render(self):
         self.stdscr.erase()
-        self.current_menu.draw(self.stdscr)
+        self.screen.draw(self.stdscr)
         self.stdscr.refresh()
 
-    def go_back(self):
-        if len(self.previous_menus) > 0:
-            self.current_menu = self.previous_menus.pop()
+    def tick(self, key):
+        self.size = self.stdscr.getmaxyx()
+        self.screen = self.screen.tick(key)
 
-    def go_to(self, menu):
-        self.previous_menus.append(self.current_menu)
-        self.current_menu = menu
-
-    def update(self, key):
-        if key == curses.KEY_BACKSPACE or key == curses.KEY_LEFT:
-            self.go_back()
-        else:
-            new_menu = self.current_menu.update(key)
-            if new_menu is not None:
-                self.go_to(new_menu)
+    @property
+    def alive(self):
+        return self.screen is not None

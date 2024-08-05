@@ -1,18 +1,21 @@
+import os
 import curses
 
-from src.views import Window
-from src.views.menus.content import ContentMenu
+from src.views import Window, MainMenuScreen, MenuHistory
 
 
 def main(stdscr):
-    content_menu = ContentMenu()
-    window = Window(stdscr, content_menu)
+    # create songs/ and thumb/ directories
+    os.makedirs("songs", exist_ok=True)
+    os.makedirs("thumb", exist_ok=True)
+    window = Window(stdscr)
+    window.screen = MenuHistory(MainMenuScreen(window))
 
     try:
-        while True:
+        while window.alive:
             window.render()
             key = stdscr.getch()
-            window.update(key)
+            window.tick(key)
     except KeyboardInterrupt:
         pass
 
