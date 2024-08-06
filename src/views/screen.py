@@ -1,9 +1,11 @@
 import curses
 import threading
+import time
 from abc import abstractmethod, ABC
 from tkinter import Menu
 
 from ..song import Song
+from ..visualizer import Visualizer
 from ..youtube import Remote
 
 
@@ -93,15 +95,19 @@ class MainMenuScreen(Screen):
 
 
 class SongScreen(Screen):
-    def __init__(self, song: Song, player):
+    def __init__(self, song: Song, window):
         super().__init__()
         self.song = song
-        self.player = player
-        stream = Remote.get_stream(song.url)
-        self.player.set(stream)
+        self.window = window
+
+        self.player = window.player
+        self.player.set(Remote.get_stream(song.url))
+
+        self.visualizer = Visualizer(5, 41)
+        self.visualizer.start(self.window.stdscr)
 
     def draw(self, stdscr) -> None:
-        stdscr.addstr(0, 0, "ZimbaFY")
+        stdscr.addstr(0, 0, f"{self.visualizer.thread}")
         image = self.song.thumb_ascii.split("\n")
         for i, line in enumerate(image):
             stdscr.addstr(i + 1, 0, line)
@@ -134,17 +140,28 @@ class SongScreen(Screen):
         volume_controls = "△(Up) ㅤ▽(Down)"
         stdscr.addstr(6, j, volume_controls)
 
+        self.visualizer.rows = len(image) - 8
+        self.visualizer.cols = self.visualizer.rows * 5
+        visual = self.visualizer.visual()
+        for i, line in enumerate(visual.split("\n")):
+            # clear waveform row
+            stdscr.addstr(i + 8, j, line)
+
     def tick(self, key):
         # space or enter
         if key == ord(" ") or key == ord("\n"):
             if self.player.playing:
                 self.player.pause()
+                self.visualizer.toggle()
             else:
                 self.player.start()
+                self.visualizer.toggle()
         elif key == ord("t") or key == ord("T") or do_return(key):
             self.player.stop()
+            self.visualizer.stop()
         elif key == ord("r"):
             self.player.restart()
+            self.visualizer.restart(self.window.stdscr)
         if key == curses.KEY_RIGHT:
             self.player.time = min(self.player.length, self.player.time + 5000)
         elif key == curses.KEY_LEFT:
@@ -156,6 +173,32 @@ class SongScreen(Screen):
         return None
 
 
+class ResettableTimer:
+    def __init__(self, interval, callback, dt=1e-3):
+        self.remaining = 0
+        self.starting_time = interval
+        self.dt = dt
+        self.callback = callback
+        self.thread = None
+
+    def run(self):
+        while self.remaining > 0:
+            time.sleep(self.dt)
+            self.remaining -= self.dt
+        self.callback()
+
+    def reset(self):
+        if self.remaining <= 0:
+            self.remaining = self.starting_time
+            self.thread = threading.Thread(target=self.run)
+            self.thread.start()
+        else:
+            self.remaining = self.starting_time
+
+    def stop(self):
+        self.remaining = 0
+
+
 class SearchScreen(Screen):
     def __init__(self, window):
         super().__init__()
@@ -164,9 +207,8 @@ class SearchScreen(Screen):
         self.results = []
         self.query = ""
         self.youtube = Remote()
-        self.search_delay = 0.1  # delay in seconds
-        self.search_timer = None
-        self.search_active = False
+        self.stdscr = None
+        self.timer = ResettableTimer(0.2, self.search)
 
     def draw(self, stdscr) -> None:
         stdscr.addstr(0, 0, "ZimbaFY")
@@ -178,36 +220,27 @@ class SearchScreen(Screen):
                 stdscr.addstr(i + 2, 0, f"  {video.title} - {video.author}")
 
     def search(self):
-        if self.search_active:
-            self.results = self.youtube.search(self.query, n=5)
-            self.selected = 0
-
-    def start_search_timer(self):
-        self.search_active = False  # Deactivate the previous search
-        if self.search_timer is not None:
-            self.search_timer.cancel()
-        self.search_active = True  # Activate the current search
-        self.search_timer = threading.Timer(self.search_delay, self.search)
-        self.search_timer.start()
+        self.results = self.youtube.search(self.query, n=5)
+        self.selected = 0
 
     def tick(self, key):
         if key == -1:
             return None
         elif key == ord("\n"):
             if self.selected < len(self.results):
-                return SongScreen(self.results[self.selected].to_song(self.window), self.window.player)
+                return SongScreen(self.results[self.selected].to_song(self.window), self.window)
         elif key == curses.KEY_UP:
             self.selected = max(0, self.selected - 1)
         elif key == curses.KEY_DOWN:
             self.selected = min(len(self.results) - 1, self.selected + 1)
         elif key == 127:
             self.query = self.query[:-1]
-            self.start_search_timer()
+            self.timer.reset()
         elif 32 <= key <= 126:
             self.query += chr(key)
-            self.start_search_timer()
+            self.timer.reset()
         elif key == 263:
             # backspace
             self.query = self.query[:-1] if self.query else ""
-            self.start_search_timer()
+            self.timer.reset()
         return None

@@ -8,49 +8,52 @@ os.environ['VLC_VERBOSE'] = '-1'
 class Player:
     def __init__(self, url=None):
         self.url = url
-        self.player = None
+        self.media = None
 
     def set(self, url):
         self.url = url
-        self.player = vlc.MediaPlayer(url)
+        self.media = vlc.MediaPlayer(url)
         return self
 
     def start(self):
-        self.player.play()
+        self.media.play()
 
     def stop(self):
-        self.player.stop()
+        self.media.stop()
 
     def pause(self):
-        self.player.pause()
+        self.media.pause()
 
     def restart(self):
-        self.player.stop()
-        self.player.play()
+        self.media.stop()
+        self.media.play()
 
     @property
     def length(self):
-        return self.player.get_length()
+        return self.media.get_length()
 
     @property
     def time(self):
-        return self.player.get_time()
+        return self.media.get_time()
 
     @property
     def playing(self):
-        return self.player.is_playing()
+        return self.media.is_playing()
 
     @time.setter
     def time(self, time):
-        self.player.set_time(time)
+        self.media.set_time(time)
 
     @property
     def volume(self):
-        return self.player.audio_get_volume()
+        return self.media.audio_get_volume()
 
     @volume.setter
     def volume(self, volume):
-        self.player.audio_set_volume(volume)
+        self.media.audio_set_volume(volume)
+
+    def waveform(self, width=100, height=10):
+        return ""
 
 
 if __name__ == "__main__":
